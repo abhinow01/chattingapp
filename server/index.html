@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Chat Client</title>
+</head>
+<body>
+  <h1>Socket.IO Chat Client</h1>
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" placeholder="Enter your username">
+    <button id="loginBtn">Login</button>
+  </div>
+  <div>
+    <label for="message">Message:</label>
+    <input type="text" id="message" placeholder="Enter your message">
+    <button id="sendMessageBtn">Send Message</button>
+  </div>
+  <div id="messages"></div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>
+    const socket = io('http://localhost:3000'); // Connect to your server
+
+    // Handle connection event
+    socket.on('connect', () => {
+      console.log('Connected to server with ID:', socket.id);
+    });
+
+    // Handle login
+    document.getElementById('loginBtn').onclick = () => {
+      const username = document.getElementById('username').value;
+      if (username) {
+        socket.emit('login', username);
+      }
+    };
+
+    // Handle sending messages
+    document.getElementById('sendMessageBtn').onclick = () => {
+      const messageContent = document.getElementById('message').value;
+      const recipientId = prompt("Enter recipient's socket ID:");
+      if (messageContent && recipientId) {
+        socket.emit('send_message', {
+          recipientId,
+          content: messageContent,
+          type: 'text'
+        });
+      }
+    };
+
+    // Listen for new messages
+    socket.on('new_message', (message) => {
+      const messagesDiv = document.getElementById('messages');
+      const messageElement = document.createElement('p');
+      messageElement.innerText = `${message.senderId}: ${message.content}`;
+      messagesDiv.appendChild(messageElement);
+    });
+
+    // Listen for user status changes
+    socket.on('user_status', (data) => {
+      console.log(`User ${data.userId} is now ${data.online ? 'online' : 'offline'}`);
+    });
+
+    // Listen for typing indicators
+    socket.on('user_typing', (data) => {
+      console.log(`User ${data.userId} is typing...`);
+    });
+
+    // Handle disconnect event
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+  </script>
+</body>
+</html>
